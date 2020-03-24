@@ -141,7 +141,8 @@ public class FileService {
 	public String getCsv(String username) throws Exception {
 		List<FileDetailsDTO> usersFilesDetails = findAllFileDetailsByUsername(username);
 		StringBuilder builder = new StringBuilder();
-		builder.append("\"ID\", \"File Name\", \"Document ID\", \"Document Name\", \"Created\"\n");
+		builder.append(
+				"\"File ID\", \"File Name\", \"Document ID\", \"Document Name\", \"Document Type\", \"Created\"\n");
 		for (FileDetailsDTO fileDetailsDTO : usersFilesDetails) {
 			builder.append(fileDetailsDTO.getCsvDetails());
 		}
@@ -160,8 +161,6 @@ public class FileService {
 
 	public void deleteFileByUID(String uID) {
 		File4DB tmpFile = filesRepository.findFile4dbByUID(uID);
-		List<File4DB> tmpList = tmpFile.getDocument().getFileList();
-		tmpList.remove(tmpFile);
 		filesRepository.delete(tmpFile);
 	}
 

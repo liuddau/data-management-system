@@ -172,13 +172,19 @@ class MyDocsTable extends Component {
   };
 
   reduceItemsList = itemsList => {
-    return itemsList.reduce((sum, item, index) => {
-      if (index === 0) {
-        return (sum = item.fileName);
+    let sum = "";
+    for (let i = 0; i < itemsList.length; i++) {
+      const element = itemsList[i].fileName;
+      if (i === 0) {
+        sum = element;
+      } else if (i < 5) {
+        sum += ", " + element;
       } else {
-        return (sum += ", " + item.fileName);
+        sum += " and " + Number(itemsList.length - 5) + " more...";
+        break;
       }
-    }, "");
+    }
+    return sum;
   };
 
   fetchCustomData = url => {
@@ -238,7 +244,7 @@ class MyDocsTable extends Component {
                   );
                 }}
               />{" "}
-              Rejected
+              Declined
             </label>
             <label className="btn btn-secondary">
               <input

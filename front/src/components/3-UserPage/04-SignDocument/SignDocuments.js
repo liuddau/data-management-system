@@ -31,11 +31,11 @@ export default class SignDocuments extends Component {
   ];
 
   sortValues = {
-    number: "d.id",
-    name: "d.name",
+    number: "id",
+    name: "name",
     type: "dt.name",
-    submited: "d.dateSubmit",
-    createdBy: "u.name"
+    submited: "dateSubmit",
+    createdBy: "u.username"
   };
 
   componentDidMount() {
@@ -69,11 +69,11 @@ export default class SignDocuments extends Component {
     }
 
     const pageData = {
-      limit: sizePerPage,
+      limit: sizePerPage === undefined ? 8 : sizePerPage,
       order: order,
-      page: page,
-      sortBy: modifiedSortField,
-      searchValueString: searchValueString
+      page: Number.isNaN(page) ? 0 : page,
+      searchValueString: searchValueString,
+      sortBy: modifiedSortField
     };
 
     axios
@@ -116,13 +116,19 @@ export default class SignDocuments extends Component {
   };
 
   reduceFilesAttached = fileslist => {
-    return fileslist.reduce((sum, item, index) => {
-      if (index === 0) {
-        return (sum = item.fileName);
+    let sum = "";
+    for (let i = 0; i < fileslist.length; i++) {
+      const element = fileslist[i].fileName;
+      if (i === 0) {
+        sum = element;
+      } else if (i < 5) {
+        sum += ", " + element;
       } else {
-        return (sum += ", " + item.fileName);
+        sum += " and " + Number(fileslist.length - 5) + " more...";
+        break;
       }
-    }, "");
+    }
+    return sum;
   };
 
   render() {

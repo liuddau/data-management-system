@@ -202,7 +202,7 @@ class EditDocument extends Component {
     headers: { "Content-Type": "multipart/form-data" }
   };
 
-  handleUpload = event => {
+  handleSubmit = event => {
     event.preventDefault();
     this.setState({ submitInProgres: true });
     const data = new FormData();
@@ -255,6 +255,24 @@ class EditDocument extends Component {
       });
   };
 
+  removeDoc = event => {
+    event.preventDefault();
+    const { name } = this.state;
+    if (
+      window.confirm("Do you really want to delete document '" + name + "'?")
+    ) {
+      axios
+        .delete(serverUrl + "doc/byUser/" + this.props.item.uid)
+        .then(response => {
+          this.props.hide();
+          this.props.reloadTable();
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+  };
+
   render() {
     return (
       <Modal show={this.props.show} onHide={this.props.hide} size="lg">
@@ -262,7 +280,7 @@ class EditDocument extends Component {
           <Modal.Title>Edit Document ID {this.props.item.uid}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <form onSubmit={this.handleUpload} id="editDocumentForm">
+          <form onSubmit={this.handleSubmit} id="editDocumentForm">
             <EditInfo
               handleNameChange={this.handleNameChange}
               handleDescriptionChange={this.handleDescriptionChange}
@@ -319,11 +337,18 @@ class EditDocument extends Component {
               </button>
               <button
                 type="submit"
-                className="btn btn-dark ml-2"
+                className="btn btn-dark mx-2"
                 data-dismiss="modal"
                 disabled={this.state.submitDisabled || !this.state.onlyPdfFiles}
               >
-                Submit
+                Update
+              </button>
+              <button
+                className="btn btn-danger ml-2"
+                data-dismiss="modal"
+                onClick={this.removeDoc}
+              >
+                Remove
               </button>
             </div>
           </form>

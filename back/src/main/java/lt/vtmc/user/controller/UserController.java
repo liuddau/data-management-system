@@ -114,25 +114,12 @@ public class UserController {
 		return new ResponseEntity<String>("Failed to create user", HttpStatus.CONFLICT);
 	}
 
-	/**
-	 * Finds and returns all users registered in the database.
-	 * 
-	 * @url /api/users
-	 * @method GET
-	 */
-//	@GetMapping(path = "/api/users")
-//	public List<UserDetailsDTO> listAllUsers() {
-//		LOG.info("# LOG # Initiated by [{}]: requested list of all users #",
-//				SecurityContextHolder.getContext().getAuthentication().getName());
-//		return userService.retrieveAllUsers();
-//	}
-
 	@Secured({ "ROLE_ADMIN" })
 	@RequestMapping(path = "/api/users", method = RequestMethod.POST)
 	public Map<String, Object> listAllUsers(@RequestBody PagingData pagingData) {
 
-//		LOG.info("# LOG # Initiated by [{}]: requested list of all groups #",
-//				SecurityContextHolder.getContext().getAuthentication().getName());
+		LOG.info("# LOG # Initiated by [{}]: requested list of all groups #",
+				SecurityContextHolder.getContext().getAuthentication().getName());
 
 		return userService.retrieveAllUsers(pagingData);
 	}
@@ -143,7 +130,7 @@ public class UserController {
 	 * @url /api/user/{username}
 	 * @method GET
 	 */
-	@Secured({ "ROLE_ADMIN" })
+	@Secured({ "ROLE_ADMIN", "ROLE_USER" })
 	@GetMapping(path = "/api/user/{username}")
 	public UserDetailsDTO findUserByUsername(@PathVariable("username") String username) {
 

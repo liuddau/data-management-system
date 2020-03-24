@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lt.vtmc.docTypes.dao.DocTypeRepository;
+import lt.vtmc.docTypes.model.DocType;
 import lt.vtmc.documents.Status;
 import lt.vtmc.documents.dao.DocumentRepository;
 import lt.vtmc.documents.dto.DocumentDetailsDTO;
@@ -97,28 +98,34 @@ public class DocumentService {
 	@Transactional
 	public void deleteDocument(Document document) {
 		List<File4DB> tmpList = document.getFileList();
-		for (File4DB file4db : tmpList) {
-			fileService.deleteFileByUID(file4db.getUID());
+		document.setFileList(null);
+		if (tmpList != null) {
+			for (File4DB file4db : tmpList) {
+				fileService.deleteFileByUID(file4db.getUID());
+			}
 		}
 
-		document.setFileList(null);
 		User author = document.getAuthor();
 		User handler = document.getHandler();
+		DocType docType = document.getdType();
 
 		if (author != null) {
 			List<Document> tmpListAuth = author.getCreatedDocuments();
 			tmpListAuth.remove(document);
+			author.setCreatedDocuments(tmpListAuth);
 			document.setAuthor(null);
 		}
 
 		if (handler != null) {
-			List<Document> tmpListHand = handler.getCreatedDocuments();
+			List<Document> tmpListHand = handler.getProcessedDocuments();
 			tmpListHand.remove(document);
+			handler.setProcessedDocuments(tmpListHand);
 			document.setHandler(null);
 		}
 
-		List<Document> tmpListDocType = document.getdType().getDocumentList();
+		List<Document> tmpListDocType = docType.getDocumentList();
 		tmpListDocType.remove(document);
+		docType.setDocumentList(tmpListDocType);
 		document.setdType(null);
 
 		docRepo.delete(document);
@@ -157,7 +164,7 @@ public class DocumentService {
 		List<Document> tmpList = tmpUser.getProcessedDocuments();
 		tmpList.add(tmp);
 		tmpUser.setProcessedDocuments(tmpList);
-		tmp.setStatus(Status.REJECTED);
+		tmp.setStatus(Status.DECLINED);
 		userRepo.save(tmpUser);
 		docRepo.save(tmp);
 	}
@@ -219,19 +226,21 @@ public class DocumentService {
 	}
 
 	public Map<String, Object> returnSubmitted(String username, PagingData pagingData) {
-			Pageable pageable = pagingData.getPageable();
-			Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(), Status.SUBMITTED , pageable);
-			Map<String, Object> responseMap = new HashMap<>();
-			responseMap.put("pagingData",
-					new PagingResponse(documents.getNumber(), documents.getTotalElements(), documents.getSize()));
-			responseMap.put("documents",
-					documents.getContent().stream().map(doc -> new DocumentDetailsDTO(doc)).collect(Collectors.toList()));
-			return responseMap;
+		Pageable pageable = pagingData.getPageable();
+		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(),
+				Status.SUBMITTED, pageable);
+		Map<String, Object> responseMap = new HashMap<>();
+		responseMap.put("pagingData",
+				new PagingResponse(documents.getNumber(), documents.getTotalElements(), documents.getSize()));
+		responseMap.put("documents",
+				documents.getContent().stream().map(doc -> new DocumentDetailsDTO(doc)).collect(Collectors.toList()));
+		return responseMap;
 	}
 
 	public Map<String, Object> returnAccepted(String username, PagingData pagingData) {
 		Pageable pageable = pagingData.getPageable();
-		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(), Status.ACCEPTED , pageable);
+		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(),
+				Status.ACCEPTED, pageable);
 		Map<String, Object> responseMap = new HashMap<>();
 		responseMap.put("pagingData",
 				new PagingResponse(documents.getNumber(), documents.getTotalElements(), documents.getSize()));
@@ -242,7 +251,8 @@ public class DocumentService {
 
 	public Map<String, Object> returnRejected(String username, PagingData pagingData) {
 		Pageable pageable = pagingData.getPageable();
-		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(), Status.REJECTED ,pageable);
+		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(),
+				Status.DECLINED, pageable);
 		Map<String, Object> responseMap = new HashMap<>();
 		responseMap.put("pagingData",
 				new PagingResponse(documents.getNumber(), documents.getTotalElements(), documents.getSize()));
@@ -253,12 +263,25 @@ public class DocumentService {
 
 	public Map<String, Object> returnCreated(String username, PagingData pagingData) {
 		Pageable pageable = pagingData.getPageable();
-		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(), Status.CREATED, pageable);
+		Page<Document> documents = userRepo.docsByUsernameAndStatus(username, pagingData.getSearchValueString(),
+				Status.CREATED, pageable);
 		Map<String, Object> responseMap = new HashMap<>();
 		responseMap.put("pagingData",
 				new PagingResponse(documents.getNumber(), documents.getTotalElements(), documents.getSize()));
 		responseMap.put("documents",
 				documents.getContent().stream().map(doc -> new DocumentDetailsDTO(doc)).collect(Collectors.toList()));
 		return responseMap;
+	}
+
+	@Transactional
+	public boolean deleteDocumentRequestedByUser(String uid, String username) {
+		boolean doesUserHaveDoc = docRepo.doesUserHaveDoc(uid, username);
+
+		if (doesUserHaveDoc) {
+			deleteDocument(docRepo.findDocumentByUID(uid));
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
